@@ -71,7 +71,7 @@ class Config:
 
 
 config = Config()
-logger_debug = util.init_logger('idlelog', name='idler')
+logger = util.init_logger('idlelog', name='idler')
 
 # --------------------------------------------------------------------------------
 # Functions
