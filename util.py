@@ -78,12 +78,18 @@ def check_enrage_status(pos):
         return False
 
 
+def get_background_img(pos):
+    '''
+    Gets a little bit of background from just under the formation to the left.
+    '''
+    return pyautogui.screenshot(region=pos.background_snippet).convert('RGB')
+
+
 def click_back(pos):
     pyautogui.click(x=pos.back[0], y=pos.back[1])
 
 
 def click_level(pos, config):
-    print(config.STACK_LVL_MOD_FIVE)
     if config.STACK_LVL_MOD_FIVE == 1:
         pyautogui.click(x=pos.level1[0], y=pos.level1[1])
     elif config.STACK_LVL_MOD_FIVE == 2:
@@ -120,3 +126,9 @@ def init_logger(logfile, name='idler'):
     logger.addHandler(fh)
 
     return logger
+
+
+def round_datetime_seconds(obj: datetime.datetime) -> datetime.datetime:
+    if obj.microsecond >= 500_000:
+        obj += datetime.timedelta(seconds=1)
+    return obj.replace(microsecond=0)

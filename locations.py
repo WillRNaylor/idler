@@ -14,6 +14,8 @@ class Locations:
             self.level5 = (1424, 181)
             self.base_level_number = (1222, 167, 30, 25)
             self.enrage_box = (629, 710, 254, 37)
+            # self.background_snippet = (23, 665, 15, 15)  # Unused
+            # self.modron_reset_icon = (575, 493, 45, 45)  # Unused
         if setup == 'windowed_hermes':
             self.safe = (835, 219)
             self.server_error = (871, 495)
@@ -29,3 +31,4 @@ class Locations:
         self.res_factor = 2
         self.base_level_number = tuple(i * self.res_factor for i in self.base_level_number)
         self.enrage_box = tuple(i * self.res_factor for i in self.enrage_box)
+        # self.background_box = tuple(i * self.res_factor for i in self.background_box)
