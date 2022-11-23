@@ -1,5 +1,6 @@
 # Added by William
 .screenshot*
+screenshot*
 .DS_store
 
 # Byte-compiled / optimized / DLL files

@@ -14,24 +14,18 @@ def alt_tab(wait=0.1, end_wait=0.1):
     time.sleep(end_wait)
 
 
-def get_base_level_number_img(fullscreen, res_factor):
+def get_base_level_number_img(pos):
     '''
     Gets the image from the upper right of the base level number
     '''
-    if fullscreen:
-        region=(1222, 167, 30, 25)  # Fullscreen
-    else:
-        region = (1188, 159, 38, 26)  # Windowed
-
-    region = tuple(i * res_factor for i in region)
-    return pyautogui.screenshot(region=region).convert('RGB')
+    return pyautogui.screenshot(region=pos.base_level_number).convert('RGB')
 
 
-def get_base_level(lvl_read_max, fullscreen, res_factor):
+def get_base_level(pos, config):
     '''
     Returns the base lvl number, or None, based on the lvl number in upper right.
     '''
-    im = get_base_level_number_img(fullscreen, res_factor)
+    im = get_base_level_number_img(pos)
     text = pytesseract.image_to_string(im)
     if text == '':
         return None
@@ -47,10 +41,10 @@ def get_base_level(lvl_read_max, fullscreen, res_factor):
         text = text.replace('o', '0')
         text = text.replace(')', '1')
         text = text.replace('A', '4')
-        if text == '836': text = '336'
+        if text == '836': text = None
         try:
             lvl = int(text)
-            if lvl > lvl_read_max:
+            if lvl > config.LVL_READ_MAX:
                 return None
         except:
             return None
@@ -58,20 +52,15 @@ def get_base_level(lvl_read_max, fullscreen, res_factor):
 
 
 
-def get_enrage_img(fullscreen, res_factor):
+def get_enrage_img(pos):
     '''
     Gets an image of the region where the enrage stacks come up.
     '''
-    if fullscreen:
-        region=(629, 710, 254, 37)  # Fullscreen
-    else:
-        region=(708, 527, 330, 49)  # Windowed
+    return pyautogui.screenshot(region=pos.enrage_box).convert('RGB')
 
-    region = tuple(i * res_factor for i in region)
-    return pyautogui.screenshot(region=region).convert('RGB')
 
-def check_enrage_status(fullscreen, res_factor):
-    im = get_enrage_img(fullscreen, res_factor)
+def check_enrage_status(pos):
+    im = get_enrage_img(pos)
     text = pytesseract.image_to_string(im)
     if isinstance(text, str):
         if 'pow' in text.lower():
@@ -84,35 +73,22 @@ def check_enrage_status(fullscreen, res_factor):
         return False
 
 
-def click_back(fullscreen):
-    if fullscreen:
-        pyautogui.click(x=1198, y=179)
+def click_back(pos):
+    pyautogui.click(x=pos.back[0], y=pos.back[1])
+
+
+def click_level(pos, config):
+    print(config.STACK_LVL_MOD_FIVE)
+    if config.STACK_LVL_MOD_FIVE == 1:
+        pyautogui.click(x=pos.level1[0], y=pos.level1[1])
+    elif config.STACK_LVL_MOD_FIVE == 2:
+        pyautogui.click(x=pos.level2[0], y=pos.level2[1])
+    elif config.STACK_LVL_MOD_FIVE == 3:
+        pyautogui.click(x=pos.level3[0], y=pos.level3[1])
+    elif config.STACK_LVL_MOD_FIVE == 4:
+        pyautogui.click(x=pos.level4[0], y=pos.level4[1])
+    elif config.STACK_LVL_MOD_FIVE == 5:
+        pyautogui.click(x=pos.level5[0], y=pos.level5[1])
     else:
-        pyautogui.click(x=1158, y=176)
-
-
-def click_level(lvl, fullscreen):
-    if fullscreen:
-        if lvl == 1:
-            pyautogui.click(x=1237, y=181)
-        if lvl == 2:
-            pyautogui.click(x=1285, y=181)
-        if lvl == 3:
-            pyautogui.click(x=1330, y=181)
-        if lvl == 4:
-            pyautogui.click(x=1377, y=181)
-        if lvl == 5:
-            pyautogui.click(x=1424, y=181)
-    else:
-        if lvl == 1:
-            pyautogui.click(x=1209, y=176)
-        if lvl == 2:
-            pyautogui.click(x=1255, y=176)
-        if lvl == 3:
-            pyautogui.click(x=1301, y=176)
-        if lvl == 4:
-            pyautogui.click(x=1352, y=176)
-        if lvl == 5:
-            pyautogui.click(x=1399, y=176)
-
+        raise ValueError
     
