@@ -1,0 +1,8 @@
+name: idler
+channels:
+    - conda-forge
+dependencies:
+    - flake8
+    - numpy
+    - pandas
+    - pyautogui
