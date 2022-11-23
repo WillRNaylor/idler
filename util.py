@@ -1,6 +1,11 @@
+import os
 import time
+import logging
+import datetime
 import pyautogui
 import pytesseract
+
+logger = logging.getLogger('idler.util')
 
 def alt_tab(wait=0.1, end_wait=0.1):
     '''
@@ -91,4 +96,27 @@ def click_level(pos, config):
         pyautogui.click(x=pos.level5[0], y=pos.level5[1])
     else:
         raise ValueError
-    
+
+
+def init_logger(logfile, name='idler'):
+    '''
+    Define the logger object for logging.
+    Parameters
+    ----------
+    logfile : str
+        Full path of the output log file.
+    name : str
+        Name of the logger, used by the logging library.
+    Returns
+    -------
+        logger."logging-object"
+    '''
+
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    fh = logging.FileHandler(os.path.join(
+        './logs', logfile + datetime.datetime.now().strftime('%Y%m%d')), 'a+')
+    fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(fh)
+
+    return logger

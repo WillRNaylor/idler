@@ -42,7 +42,7 @@ class Config:
         # Stacks needed: 5822 (736) 6.6k for (756) 657/3.5k657
         self.STOP_LVL = 641
         self.NUMBER_CLICK_BACK = 4  # Ideally stack on X21 / X26
-        self.STACK_LVL_MOD_FIVE = 2
+        self.STACK_LVL_MOD_FIVE = 1
 
         self.FINAL_CLEAR_WAIT_TIME = 2
         self.STACK_WAIT_TIME = 4
@@ -71,17 +71,19 @@ class Config:
 
 
 config = Config()
+logger_debug = util.init_logger('idlelog', name='idler')
 
 # --------------------------------------------------------------------------------
 # Functions
 # --------------------------------------------------------------------------------
 
 
-def progess(pos, config):
+def progess(pos, config, logger):
     '''
     '''
     safety_counter = 0
     lvl = None
+    logger.info('Staring: progress()')
     while True:
         lvl = util.get_base_level(pos, config)
         if lvl is not None:
@@ -90,57 +92,61 @@ def progess(pos, config):
             if (lvl >= config.STOP_LVL) and (safety_counter > config.LVL_SAFETY_COUNT):
                 pyautogui.press('g')
                 time.sleep(config.FINAL_CLEAR_WAIT_TIME)
-                return lvl
-        if config.VERBOSE:
-            lvl_string = str(lvl).zfill(4) if lvl is not None else '-'
-            print(lvl_string, safety_counter)
+                logger.info(f'Exiting progress() with lvl: {lvl_string}   sc: {safety_counter}')
+                return
+        lvl_string = str(lvl).zfill(4) if lvl is not None else '  - '
+        logger.info(f'lvl: {lvl_string}   sc: {safety_counter}')
 
 
-def prepare_to_stack(pos, config):
+def prepare_to_stack(pos, config, logger):
     '''
     Idea is to go back a few lvls and then select a nice level to stack on.
     This also means that we have a "screen transition", which should allow for
     switching formation without error.
     '''
+    logger.info('Staring: prepare_to_stack()')
     for _ in range(config.NUMBER_CLICK_BACK):
-        if config.VERBOSE:
-            print("clicking back")
+        logger.info("Clicking back")
         util.click_back(pos)
         time.sleep(config.CLICK_BACK_WAIT_TIME)
-    if config.VERBOSE:
-        print("clicking to specific stack lvl")
+    logger.info(f"Clicking to specific stack lvl: {config.STACK_LVL_MOD_FIVE}")
     util.click_level(pos, config)
     time.sleep(config.SHORT_CLICK_WAIT)
     pyautogui.press(config.STACK_GROUP)
-    current_base_lvl = util.get_base_level(pos, config)
-    return current_base_lvl
+    logger.info(f"Switched to stack group")
+    logger.info(f"Base lvl read to be: {util.get_base_level(pos, config)}")
 
 
-def wait_for_enrage(pos, config):
+def wait_for_enrage(pos, config, logger):
+    logger.info('Staring: wait_for_enrage()')
     update_counter = 0
     while update_counter < 1000:
         time.sleep(config.RAGE_CHECK_WAIT)
         rage = util.check_enrage_status(pos)
         if rage:
-            return True
-        if config.VERBOSE:
-            if update_counter % 10 == 0:
-                print(update_counter, "Waiting for enemies to enrage...")
+            logger.info('Exiting wait_for_enrage() successfully')
+            return
+        if update_counter % 10 == 0:
+            logger.info(f'Waiting...  uc: {update_counter}')
         update_counter += 1
-    return False
+    logger.info(f'Exiting wait_for_enrage() unsuccessfully  uc: {update_counter}')
 
 
-def wait_for_more_stacks(config):
+def wait_for_more_stacks(config, logger):
+    logger.info(f'Waitig {config.STACK_WAIT_TIME} seconds for a few more stacks.')
     time.sleep(config.STACK_WAIT_TIME)
 
 
-def progress_to_reset(config):
+def progress_to_reset(config, logger):
+    logger.info('Attack!')
     pyautogui.press('g')
     time.sleep(config.SHORT_CLICK_WAIT)
     pyautogui.press(config.KILL_GROUP)
+    logger.info("Switched to KILL_GROUP, and 'g'ing")
 
 
-def level_reset_and_start(pos, config):
+def level_reset_and_start(pos, config, logger):
+    logger.info("Waiting for kills and reset in level_reset_and_start()")
     time.sleep(config.RESET_WAIT)
     pyautogui.click(x=pos.server_error[0], y=pos.server_error[1])
     time.sleep(config.LONG_CLICK_WAIT)
@@ -193,24 +199,12 @@ while True:
     print(f'Resets:     {reset_counter}')
     print('')
 
-    base_lvl = progess(pos, config)
-    if config.VERBOSE:
-        print("---- Stopping at base lvl:", base_lvl)
+    progess(pos, config, logger)
+    prepare_to_stack(pos, config, logger)
+    wait_for_enrage(pos, config, logger)
+    wait_for_more_stacks(config, logger)
+    progress_to_reset(config, logger)
+    level_reset_and_start(pos, config, logger)
 
-    base_lvl = prepare_to_stack(pos, config)
-    if config.VERBOSE:
-        print("---- Stacking at base lvl:", base_lvl)
-
-    out = wait_for_enrage(pos, config)
-    if config.VERBOSE:
-        print("---- Enemies enraged with result:", out)
-
-    wait_for_more_stacks(config)
-
-    progress_to_reset(config)
-    if config.VERBOSE:
-        print("---- Attack!!!")
-
-    level_reset_and_start(pos, config)
     reset_counter += 1
 
