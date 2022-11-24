@@ -3,8 +3,8 @@ import numpy as np
 import cv2
 import pyautogui
 import pytesseract
-
 import mss
+
 import util
 from locations import Locations
 

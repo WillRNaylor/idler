@@ -12,8 +12,10 @@ class Locations:
             self.level3 = (1330, 181)
             self.level4 = (1377, 181)
             self.level5 = (1424, 181)
-            self.base_level_number = (1222, 167, 30, 25)
-            self.enrage_box = (629, 710, 254, 37)
+            # self.base_level_number = (1222, 167, 30, 25)
+            # self.enrage_box = (629, 710, 254, 37)
+            self.base_level_number = {"top": 171, "left": 1222, "width": 30, "height": 16}
+            self.enrage_box = {"top": 710, "left": 629, "width": 254, "height": 37}
             # self.background_snippet = (23, 665, 15, 15)  # Unused
             # self.modron_reset_icon = (575, 493, 45, 45)  # Unused
         if setup == 'windowed_hermes':
@@ -25,10 +27,10 @@ class Locations:
             self.level3 = (1301, 176)
             self.level4 = (1352, 176)
             self.level5 = (1399, 176)
-            self.base_level_number = (1188, 159, 38, 26)
-            self.enrage_box = (708, 527, 330, 49)
+            # self.base_level_number = (1188, 159, 38, 26)
+            # self.enrage_box = (708, 527, 330, 49)
         
-        self.res_factor = 2
-        self.base_level_number = tuple(i * self.res_factor for i in self.base_level_number)
-        self.enrage_box = tuple(i * self.res_factor for i in self.enrage_box)
-        # self.background_box = tuple(i * self.res_factor for i in self.background_box)
+        # self.res_factor = 2
+        # self.base_level_number = tuple(i * self.res_factor for i in self.base_level_number)
+        # self.enrage_box = tuple(i * self.res_factor for i in self.enrage_box)
+        # # self.background_box = tuple(i * self.res_factor for i in self.background_box)

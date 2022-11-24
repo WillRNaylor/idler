@@ -2,8 +2,11 @@ import os
 import time
 import logging
 import datetime
+import numpy as np
 import pyautogui
 import pytesseract
+import mss
+
 
 logger = logging.getLogger('idler.util')
 
@@ -23,7 +26,8 @@ def get_base_level_number_img(pos):
     '''
     Gets the image from the upper right of the base level number
     '''
-    return pyautogui.screenshot(region=pos.base_level_number).convert('RGB')
+    with mss.mss() as sct:
+        return np.array(sct.grab(pos.base_level_number))
 
 
 def get_base_level(pos, config):
@@ -59,9 +63,10 @@ def get_base_level(pos, config):
 
 def get_enrage_img(pos):
     '''
-    Gets an image of the region where the enrage stacks come up.
+    Gets the image from where the enrage stacks text comes up
     '''
-    return pyautogui.screenshot(region=pos.enrage_box).convert('RGB')
+    with mss.mss() as sct:
+        return np.array(sct.grab(pos.enrage_box))
 
 
 def check_enrage_status(pos):

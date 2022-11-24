@@ -62,6 +62,7 @@ class Config:
         self.CLICK_BACK_WAIT_TIME = 0.3
         self.SHORT_CLICK_WAIT = 0.1
         self.LONG_CLICK_WAIT = 0.3
+        self.PROGRESS_WAIT = 0.05
         self.RAGE_CHECK_WAIT = 0.2
 
         if self.STOP_LVL % 100 > 50:
@@ -88,6 +89,7 @@ def progess(pos, config):
     lvl = None
     config.logger.info('Staring: progress()')
     while True:
+        time.sleep(config.PROGRESS_WAIT)
         lvl = util.get_base_level(pos, config)
         if lvl is not None:
             if lvl >= config.SAFETY_LVL:
