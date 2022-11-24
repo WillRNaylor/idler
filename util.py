@@ -6,6 +6,7 @@ import numpy as np
 import pyautogui
 import pytesseract
 import mss
+import cv2
 
 
 logger = logging.getLogger('idler.util')
@@ -22,43 +23,65 @@ def alt_tab(wait=0.1, end_wait=0.1):
     time.sleep(end_wait)
 
 
+def init_lvl_dict(config):
+    # Load the transition image:
+    transition = cv2.imread(os.path.join(config.IMG_REF_PATH, 'transition.png'))
+
+    # Load images:
+    lvls = []
+    imgs = []
+    # First the undone levels:
+    files = os.listdir(os.path.join(config.IMG_REF_PATH, 'base_lvls'))
+    files.sort()
+    for f in files:
+        if f[-4:] != '.png':
+            continue
+        lvls.append(int(f[:-4]))
+        imgs.append(cv2.imread(os.path.join(config.IMG_REF_PATH, 'base_lvls', f)))
+    # Now the completed levels:
+    files = os.listdir(os.path.join(config.IMG_REF_PATH, 'base_lvls_done'))
+    files.sort()
+    for f in files:
+        if f[-4:] != '.png':
+            continue
+        lvls.append(int(f[:-4]))
+        imgs.append(cv2.imread(os.path.join(config.IMG_REF_PATH, 'base_lvls_done', f)))
+    
+    return {'lvls': lvls, 'imgs': imgs, 'transition': transition}
+
+
 def get_base_level_number_img(pos):
     '''
     Gets the image from the upper right of the base level number
     '''
     with mss.mss() as sct:
-        return np.array(sct.grab(pos.base_level_number))
+        return np.array(sct.grab(pos.base_level_number))[:, :, :3]
 
 
-def get_base_level(pos, config):
+def get_base_level(pos, config, lvl_ref=None, last_pt=None):
     '''
-    Returns the base lvl number, or None, based on the lvl number in upper right.
+    Returns (lvl, last_pt)
     '''
-    im = get_base_level_number_img(pos)
-    text = pytesseract.image_to_string(im)
-    if text == '':
-        return None
-    else:
-        # if text[0] == 'z': text = text.replace('B', '3')
-        text = text[:-1]
-        text = text.replace('B', '3')
-        text = text.replace('z', '2')
-        text = text.replace('Z', '2')
-        text = text.replace('t', '1')
-        text = text.replace('l', '1')
-        text = text.replace('}', '1')
-        text = text.replace('o', '0')
-        text = text.replace(')', '1')
-        text = text.replace('A', '4')
-        if text == '836': text = None
-        try:
-            lvl = int(text)
-            if lvl > config.LVL_READ_MAX:
-                return None
-        except:
-            return None
-        return lvl
 
+    if lvl_ref is None:
+        lvl_ref = init_lvl_dict(config)
+    if last_pt is None:
+        last_pt = 0
+
+    img = get_base_level_number_img(pos)
+
+    # First, check if we are in a transition:
+    if np.allclose(img, lvl_ref['transition'], atol=config.IMG_CLOSE_RANGE):
+        return (None, None)
+
+    m = len(lvl_ref['lvls'])
+    counter = 0
+    while counter < m:
+        pt = (last_pt + counter) % m
+        if np.allclose(img, lvl_ref['imgs'][pt], atol=config.IMG_CLOSE_RANGE):
+            return (lvl_ref['lvls'][pt], pt)
+        counter += 1
+    return (None, None)
 
 
 def get_enrage_img(pos):
@@ -109,7 +132,7 @@ def click_level(pos, config):
         raise ValueError
 
 
-def init_logger(logfile, name='idler'):
+def init_logger(logfile, name='idler', level=logging.INFO):
     '''
     Define the logger object for logging.
     Parameters
@@ -124,7 +147,7 @@ def init_logger(logfile, name='idler'):
     '''
 
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(level)
     fh = logging.FileHandler(os.path.join(
         './logs', logfile + datetime.datetime.now().strftime('%Y%m%d')), 'a+')
     fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))

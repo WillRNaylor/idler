@@ -4,7 +4,7 @@ class Locations:
     def __init__(self, setup):
 
         if setup == 'fullscreen_hermes':
-            self.safe = (835, 219)
+            self.safe = (1151, 183)
             self.server_error = (757, 566)
             self.back = (1198, 179)
             self.level1 = (1237, 181)
@@ -14,7 +14,7 @@ class Locations:
             self.level5 = (1424, 181)
             # self.base_level_number = (1222, 167, 30, 25)
             # self.enrage_box = (629, 710, 254, 37)
-            self.base_level_number = {"top": 171, "left": 1222, "width": 30, "height": 16}
+            self.base_level_number = {"top": 171, "left": 1222, "width": 26, "height": 16}
             self.enrage_box = {"top": 710, "left": 629, "width": 254, "height": 37}
             # self.background_snippet = (23, 665, 15, 15)  # Unused
             # self.modron_reset_icon = (575, 493, 45, 45)  # Unused

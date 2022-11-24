@@ -1,4 +1,5 @@
 import time
+import logging
 from datetime import datetime
 import pyautogui
 
@@ -47,7 +48,7 @@ class Config:
         self.FINAL_CLEAR_WAIT_TIME = 2
         self.STACK_WAIT_TIME = 4
         self.EXTRA_BOSSES = 2
-        self.RESET_WAIT = 30
+        self.LEVEL1_CLEAR_WAIT = 6
 
         # ======================= ADVANCED INPUT =====================
         self.VERBOSE = True
@@ -64,13 +65,15 @@ class Config:
         self.LONG_CLICK_WAIT = 0.3
         self.PROGRESS_WAIT = 0.05
         self.RAGE_CHECK_WAIT = 0.2
+        self.IMG_REF_PATH = 'img_reference'
+        self.IMG_CLOSE_RANGE = 5
 
         if self.STOP_LVL % 100 > 50:
             self.SAFETY_LVL = self.STOP_LVL - (self.STOP_LVL % 100)
         else:
             self.SAFETY_LVL = self.STOP_LVL - (self.STOP_LVL % 100) - 50
         
-        self.logger = util.init_logger('logfile_', name='idler')
+        self.logger = util.init_logger('logfile_', name='idler', level=logging.WARNING)
         self.timer = util.init_logger('time_brakdown_', name='timer')
 
 
@@ -85,12 +88,14 @@ def progess(pos, config):
     '''
     '''
     t = time.time()
+    lvl_ref = util.init_lvl_dict(config)
+    last_pt = None
     safety_counter = 0
     lvl = None
     config.logger.info('Staring: progress()')
     while True:
         time.sleep(config.PROGRESS_WAIT)
-        lvl = util.get_base_level(pos, config)
+        lvl, last_pt = util.get_base_level(pos, config, lvl_ref=lvl_ref, last_pt=last_pt)
         if lvl is not None:
             if lvl >= config.SAFETY_LVL:
                 safety_counter +=1
@@ -120,6 +125,8 @@ def prepare_to_stack(pos, config):
     util.click_level(pos, config)
     time.sleep(config.SHORT_CLICK_WAIT)
     pyautogui.press(config.STACK_GROUP)
+    time.sleep(config.SHORT_CLICK_WAIT)
+    pyautogui.moveTo(pos.safe[0], pos.safe[1])
     config.logger.info(f"Switched to stack group")
     config.logger.info(f"Base lvl read to be: {util.get_base_level(pos, config)}")
     # config.timer.info(f'to stack:  {time.time() - t:5.1f}')
@@ -160,16 +167,31 @@ def progress_to_reset(config):
     # config.timer.info(f'to reset:  {time.time() - t:5.1f}')
 
 
-def level_reset_and_start(pos, config):
+def wait_for_reset(pos, config):
     t = time.time()
-    config.logger.info("Waiting for kills and reset in level_reset_and_start()")
-    time.sleep(config.RESET_WAIT)
+    lvl_ref = util.init_lvl_dict(config)
+    last_pt = None
+    safety_counter = 0
+    lvl = None
+    config.logger.info('Staring: wait_for_reset()')
+    while safety_counter < 1000:
+        time.sleep(config.PROGRESS_WAIT)
+        lvl, last_pt = util.get_base_level(pos, config, lvl_ref=lvl_ref, last_pt=last_pt)
+        if lvl is not None:
+            if lvl == 1:
+                pyautogui.press('g')
+                time.sleep(config.LEVEL1_CLEAR_WAIT)
+                pyautogui.press('g')
+                break
+            safety_counter += 1
+    config.logger.info("Click away the server error messages")
     pyautogui.click(x=pos.server_error[0], y=pos.server_error[1])
     time.sleep(config.LONG_CLICK_WAIT)
     pyautogui.click(x=pos.server_error[0], y=pos.server_error[1])
     time.sleep(config.SHORT_CLICK_WAIT)
     pyautogui.moveTo(pos.safe[0], pos.safe[1])
-    # config.timer.info(f'reset lvl: {time.time() - t:5.1f}')
+    t = time.time()
+    config.timer.info(f'reset wai: {time.time() - t:5.1f}')
 
 
 # --------------------------------------------------------------------------------
@@ -197,7 +219,7 @@ SAFETY_LVL: {config.SAFETY_LVL}
 print("==== Switching to Idle Champions")
 util.alt_tab()
 time.sleep(config.SHORT_CLICK_WAIT)
-pyautogui.moveTo(pos.safe[0], pos.safe[1])  # Put the mouse somewhere safe
+pyautogui.moveTo(pos.safe[0], pos.safe[1])
 
 print("==== Starting main loop:")
 
@@ -218,7 +240,7 @@ while True:
     start_datetime = util.round_datetime_seconds(datetime.now())
 
     # Write some info to file:
-    config.timer.info(f'Prev run time: {time_delta},    BPH: {bph}')
+    config.timer.info(f'Run stats: {time_delta},    BPH: {bph}')
     config.timer.info(f'---------- Starting new run at: {start_datetime}')
     print(f'{start_datetime} |  delta: {int(time_delta / 60)}:{str(time_delta % 60).zfill(2)}  BPH: {bph}')
 
@@ -228,6 +250,6 @@ while True:
     wait_for_enrage(pos, config)
     wait_for_more_stacks(config)
     progress_to_reset(config)
-    level_reset_and_start(pos, config)
+    wait_for_reset(pos, config)
     reset_counter += 1
 

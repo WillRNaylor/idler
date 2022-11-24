@@ -1,4 +1,5 @@
 import time
+import os
 import numpy as np
 import cv2
 import pyautogui
@@ -8,7 +9,10 @@ import mss
 import util
 from locations import Locations
 
-pos = Locations('fullscreen_hermes')
+
+# --------------------------------------------------------------------------------
+# Setup
+# --------------------------------------------------------------------------------
 
 class Config:
     def __init__(self):
@@ -38,7 +42,10 @@ class Config:
         self.CLICK_BACK_WAIT_TIME = 0.3
         self.SHORT_CLICK_WAIT = 0.1
         self.LONG_CLICK_WAIT = 0.3
+        self.PROGRESS_WAIT = 0.05
         self.RAGE_CHECK_WAIT = 0.2
+        self.IMG_REF_PATH = 'img_reference'
+
 
         if self.STOP_LVL % 100 > 50:
             self.SAFETY_LVL = self.STOP_LVL - (self.STOP_LVL % 100)
@@ -48,9 +55,45 @@ class Config:
         self.logger = util.init_logger('logfile_', name='idler')
         self.timer = util.init_logger('time_brakdown_', name='timer')
 
-
 config = Config()
+pos = Locations('fullscreen_hermes')
 
+
+util.alt_tab()
+time.sleep(0.1)
+pyautogui.moveTo(pos.safe[0], pos.safe[1])
+
+# --------------------------------------- TESTING THE IMG COMPARE FOR BASE LVLS:
+
+lvl_ref = util.init_lvl_dict(config)
+# img = util.get_base_level_number_img(pos)
+# print('pytess:', pytesseract.image_to_string(img))
+
+t = time.time()
+lvl, last = util.get_base_level(pos, config, lvl_ref=lvl_ref, last_pt=0)
+print(time.time() - t, lvl, last)
+
+# i = 288
+# print(lvl_ref['lvls'][i])
+# cv2.imshow("OpenCV/Numpy", lvl_ref['imgs'][i])
+# cv2.waitKey(0) 
+# cv2.destroyAllWindows() 
+
+# print(type(img))
+# print(img.shape)
+# cv2.imshow("OpenCV/Numpy", img)
+# cv2.waitKey(0) 
+# cv2.destroyAllWindows() 
+
+# img = util.get_base_level_number_img(pos)
+# print(type(img))
+# print(img.shape)
+# print(img[:, :, 0])
+# print(img[:, :, 1])
+# print(img[:, :, 2])
+# print(img[:, :, 3])
+
+# --------------------------------------- TESTING THE MSS MODULE:
 
 # with mss.mss() as sct:
 #     # Part of the screen to capture
@@ -77,23 +120,28 @@ config = Config()
 #             break
 
 
-util.alt_tab()
-time.sleep(0.1)
-pyautogui.moveTo(pos.safe[0], pos.safe[1])
+# util.alt_tab()
+# time.sleep(0.1)
+# pyautogui.moveTo(pos.safe[0], pos.safe[1])
 
-t = time.time()
-lvl = util.get_base_level(pos, config)
-print(lvl, time.time() - t)
-
-
-def get_base_level_number_img(pos):
-    '''
-    Gets the image from the upper right of the base level number
-    '''
-    with mss.mss() as sct:
-        return np.array(sct.grab(pos))
+# t = time.time()
+# lvl = util.get_base_level(pos, config)
+# print(lvl, time.time() - t)
 
 
+# def get_base_level_number_img(pos):
+#     '''
+#     Gets the image from the upper right of the base level number
+#     '''
+#     with mss.mss() as sct:
+#         return np.array(sct.grab(pos))
+
+# pos = {"top": 171, "left": 1222, "width": 30, "height": 16}
+# img = get_base_level_number_img(pos)
+# cv2.imshow("OpenCV/Numpy", img)
+# cv2.waitKey(0) 
+# cv2.destroyAllWindows() 
+# print(pytesseract.image_to_string(img))
 
 # while True:
 #     # pos = {"top": 169, "left": 1222, "width": 30, "height": 21}
@@ -102,28 +150,3 @@ def get_base_level_number_img(pos):
 #     cv2.imshow("OpenCV/Numpy", img)
 #     cv2.waitKey(0) 
 #     cv2.destroyAllWindows() 
-
-#     text = pytesseract.image_to_string(img)
-#     if text is not None:
-#         print(text)
-#     else:
-#         print('None')
-#     time.sleep(1)
-
-
-pos = {"top": 171, "left": 1222, "width": 30, "height": 16}
-img = get_base_level_number_img(pos)
-cv2.imshow("OpenCV/Numpy", img)
-cv2.waitKey(0) 
-cv2.destroyAllWindows() 
-print(pytesseract.image_to_string(img))
-
-# pos = {"top": 169, "left": 1222, "width": 30, "height": 21}
-pos = {"top": 169, "left": 1220, "width": 34, "height": 21}
-img = get_base_level_number_img(pos)
-# cv2.imshow("OpenCV/Numpy", img)
-# cv2.waitKey(0) 
-# cv2.destroyAllWindows() 
-
-text = pytesseract.image_to_string(img)
-print(text)
