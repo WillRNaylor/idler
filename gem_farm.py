@@ -96,7 +96,7 @@ def progess(pos, config):
                 pyautogui.press('g')
                 time.sleep(config.FINAL_CLEAR_WAIT_TIME)
                 config.logger.info(f'Exiting progress() with lvl: {lvl_string}   sc: {safety_counter}')
-                config.timer.info(f'{time.time() - t:.4f} progress() Exiting with lvl {lvl_string}')
+                config.timer.info(f'progress:  {time.time() - t:5.1f}')
                 return
         lvl_string = str(lvl).zfill(4) if lvl is not None else '  - '
         config.logger.info(f'lvl: {lvl_string}   sc: {safety_counter}')
@@ -120,7 +120,7 @@ def prepare_to_stack(pos, config):
     pyautogui.press(config.STACK_GROUP)
     config.logger.info(f"Switched to stack group")
     config.logger.info(f"Base lvl read to be: {util.get_base_level(pos, config)}")
-    config.timer.info(f'{time.time() - t:.4f} prepare_to_stack()')
+    # config.timer.info(f'to stack:  {time.time() - t:5.1f}')
 
 
 def wait_for_enrage(pos, config):
@@ -132,20 +132,20 @@ def wait_for_enrage(pos, config):
         rage = util.check_enrage_status(pos)
         if rage:
             config.logger.info('Exiting wait_for_enrage() successfully')
-            config.timer.info(f'{time.time() - t:.4f} wait_for_enrage() success')
+            config.timer.info(f'rage wait: {time.time() - t:5.1f}')
             return
         if update_counter % 10 == 0:
             config.logger.info(f'Waiting...  uc: {update_counter}')
         update_counter += 1
     config.logger.info(f'Exiting wait_for_enrage() unsuccessfully  uc: {update_counter}')
-    config.timer.info(f'{time.time() - t:.4f} wait_for_enrage() fail')
+    config.timer.info(f'rage wait: {time.time() - t:5.1f}')
 
 
 def wait_for_more_stacks(config):
     t = time.time()
     config.logger.info(f'Waitig {config.STACK_WAIT_TIME} seconds for a few more stacks.')
     time.sleep(config.STACK_WAIT_TIME)
-    config.timer.info(f'{time.time() - t:.4f} wait_for_more_stacks()')
+    # config.timer.info(f'more stak: {time.time() - t:5.1f}')
 
 
 def progress_to_reset(config):
@@ -155,7 +155,7 @@ def progress_to_reset(config):
     time.sleep(config.SHORT_CLICK_WAIT)
     pyautogui.press(config.KILL_GROUP)
     config.logger.info("Switched to KILL_GROUP, and 'g'ing")
-    config.timer.info(f'{time.time() - t:.4f} progress_to_reset()')
+    # config.timer.info(f'to reset:  {time.time() - t:5.1f}')
 
 
 def level_reset_and_start(pos, config):
@@ -167,7 +167,7 @@ def level_reset_and_start(pos, config):
     pyautogui.click(x=pos.server_error[0], y=pos.server_error[1])
     time.sleep(config.SHORT_CLICK_WAIT)
     pyautogui.moveTo(pos.safe[0], pos.safe[1])
-    config.timer.info(f'{time.time() - t:.4f} level_reset_and_start()')
+    # config.timer.info(f'reset lvl: {time.time() - t:5.1f}')
 
 
 # --------------------------------------------------------------------------------
@@ -200,22 +200,25 @@ pyautogui.moveTo(pos.safe[0], pos.safe[1])  # Put the mouse somewhere safe
 print("==== Starting main loop:")
 
 reset_counter = 0
-start_time = None
+start_datetime = None
+start_time = time.time()
 time_delta = None
 bph = None
 while True:
     # Calculate basic data:
-    if start_time is not None:
-        time_delta = datetime.now() - start_time
-        bph = (int(config.STOP_LVL / 5) + config.EXTRA_BOSSES) / (time_delta.total_seconds() / 3600)
-        time_delta = util.round_datetime_seconds(start_time)
-        bph = int(bph)
-    start_time = util.round_datetime_seconds(datetime.now())
+    if start_datetime is not None:
+        time_delta = time.time() - start_time
+        bph = int((int(config.STOP_LVL / 5) + config.EXTRA_BOSSES) / (time_delta / 3600))
+        time_delta = int(time_delta)
+    else:
+        time_delta = 0
+    start_time = time.time()
+    start_datetime = util.round_datetime_seconds(datetime.now())
 
     # Write some info to file:
     config.timer.info(f'Prev run time: {time_delta},    BPH: {bph}')
-    config.timer.info(f'Starting new run at: {start_time}')
-    print(f'{start_time} |  delta: {time_delta}  BPH: {bph}')
+    config.timer.info(f'---------- Starting new run at: {start_datetime}')
+    print(f'{start_datetime} |  delta: {int(time_delta / 60)}:{str(time_delta % 60).zfill(2)}  BPH: {bph}')
 
     # Run program:
     progess(pos, config)

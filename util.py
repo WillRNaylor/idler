@@ -128,7 +128,5 @@ def init_logger(logfile, name='idler'):
     return logger
 
 
-def round_datetime_seconds(obj: datetime.datetime) -> datetime.datetime:
-    if obj.microsecond >= 500_000:
-        obj += datetime.timedelta(seconds=1)
-    return obj.replace(microsecond=0)
+def round_datetime_seconds(dt):
+    return dt - datetime.timedelta(microseconds=dt.microsecond)
