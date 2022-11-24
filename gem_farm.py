@@ -42,7 +42,7 @@ class Config:
         # Tall Tales (v):
         # Stacks needed: 5822 (736) 6.6k for (756) 657/3.5k657
         self.STOP_LVL = 641
-        self.NUMBER_CLICK_BACK = 4  # Ideally stack on X21 / X26
+        self.NUMBER_CLICK_BACK = 3  # Ideally stack on X21 / X26
         self.STACK_LVL_MOD_FIVE = 1
 
         self.FINAL_CLEAR_WAIT_TIME = 2
