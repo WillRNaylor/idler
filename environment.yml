@@ -6,3 +6,5 @@ dependencies:
     - numpy
     - pandas
     - pyautogui
+    - python-mss
+    - opencv
