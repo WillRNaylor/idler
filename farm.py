@@ -54,13 +54,16 @@ reset_counter = 0
 while True:
     # Run program:
     t = time.time()
+    print('1', end='')
     ic.wait_and_stop_at_base_lvl(460)
     ic.click_level(1)
     ic.select_group('e')
     time.sleep(0.2)
     ic.restart_ic()
     time.sleep(0.1)
+    print('s', end='')
     ic.swap_to_group_and_start_progress('q')
+    print('2 ', end='')
     ic.wait_for_reset()
     reset_counter += 1
     print(f"Counter: {str(reset_counter).zfill(4)}  | Run time: {time.time() - t}")

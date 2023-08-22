@@ -14,13 +14,14 @@ class Locations:
             self.level5 = (1424, 181)
             self.load_ok = (759, 661)
             self.steam_start_button = (393, 471)
-            self.welcome_back_button = (750, 660)
+            self.welcome_back_button = (753, 609)
+            self.welcome_back_button_2 = (753, 662)
             # self.base_level_number = (1222, 167, 30, 25)
             # self.enrage_box = (629, 710, 254, 37)
             self.base_level_number = {"top": 171, "left": 1222, "width": 26, "height": 16}
             self.enrage_box = {"top": 710, "left": 629, "width": 254, "height": 37}
             self.steam_start_button_box = {"top": 442, "left": 289, "width": 231, "height": 55}
-            self.welcome_back_ok_button = {"top": 644, "left": 718, "width": 76, "height": 36}
+            self.welcome_back = {"top": 362, "left": 520, "width": 474, "height": 296}
             # self.background_snippet = (23, 665, 15, 15)  # Unused
             # self.modron_reset_icon = (575, 493, 45, 45)  # Unused
         if setup == 'windowed_hermes':

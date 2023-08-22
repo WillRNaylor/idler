@@ -137,9 +137,9 @@ class Idler:
         with mss.mss() as sct:
             return np.array(sct.grab(self.pos.steam_start_button_box))
 
-    def get_welcome_back_button(self):
+    def get_welcome_back(self):
         with mss.mss() as sct:
-            return np.array(sct.grab(self.pos.welcome_back_ok_button))
+            return np.array(sct.grab(self.pos.welcome_back))
 
     def check_steam_ic_running(self):
         im = self.get_steam_start_button()
@@ -151,25 +151,27 @@ class Idler:
         else:
             return None
 
-    def check_welcome_back_button_present(self, number):
-        im = self.get_welcome_back_button()
-        avgs = [np.mean(im[:, :, 0]), np.mean(im[:, :, 1]), np.mean(im[:, :, 2])]
-        print(number, avgs)
-        cv2.imwrite(os.path.join('.', f"ok_button_{number}.png"), im)
-        if (60 < avgs[0] < 80) and (144 < avgs[1] < 164) and (92 < avgs[2] < 112):
-            print('welcome found')
-            return True
+    def check_welcome_back_button_present(self):
+        im = self.get_welcome_back()
+        # cv2.imwrite(os.path.join('.', f"ok_button_{number}.png"), im)  # Reqs num in input
+        text = pytesseract.image_to_string(im)
+        if isinstance(text, str):
+            if 'welcome' in text.lower():
+                return True
+            elif 'back' in text.lower():
+                return True
+            elif 'you were away' in text.lower():
+                return True
         else:
-            print('welcome not found')
             return False
     
     def wait_welcome_back_button_present(self):
-        sleep_time = 1.3
+        sleep_time = 0.2
         safety_cutoff = int(30 * 60 / sleep_time)
         safety_counter = 0
         while True:
             time.sleep(sleep_time)
-            if self.check_welcome_back_button_present(safety_counter) is True:
+            if self.check_welcome_back_button_present() is True:
                 return
             if safety_counter > safety_cutoff:
                 print("We ran into the welcome back cutoff")
@@ -212,6 +214,7 @@ class Idler:
 
     def click_welcome_back_button(self):
         pyautogui.click(x=self.pos.welcome_back_button[0], y=self.pos.welcome_back_button[1])
+        pyautogui.click(x=self.pos.welcome_back_button_2[0], y=self.pos.welcome_back_button_2[1])
 
     def select_group(self, group):
         pyautogui.press(group)
@@ -284,9 +287,9 @@ class Idler:
 
     def swap_to_group_and_start_progress(self, group):
         self.logger.info('swap_to_group_and_start_progress()')
-        pyautogui.keyDown('shift')
+        # pyautogui.keyDown('shift')
         self.click_back()
-        pyautogui.keyUp('shift')
+        # pyautogui.keyUp('shift')
         time.sleep(self.short_click_wait)
         self.click_level(1)
         time.sleep(self.short_click_wait)
@@ -295,14 +298,14 @@ class Idler:
         pyautogui.press('g')
         self.logger.info("Switched to KILL_GROUP, and 'g'ing")
         
-    def wait_for_reset(self, safety_lvl_upper=100, pause_at_reset=None):
+    def wait_for_reset(self, safety_lvl_upper=60, pause_at_reset=None):
         '''
         pause_at_reset should be None, or a pause time
         '''
         t = time.time()
         self.logger.info('Starting: wait_for_reset()')
         safety_counter = 0
-        while safety_counter < 1000:
+        while safety_counter < 100000:
             time.sleep(self.progress_wait)
             self.last_pt = 0  # We care about finding lvl 1, so start from 0
             lvl = self.get_base_level()
@@ -325,18 +328,18 @@ class Idler:
     def restart_ic(self):
         # Quit ic
         pyautogui.hotkey('command', 'q')
-        time.sleep(2)
+        time.sleep(1)
         # Open steam (it must be in a full screen type format)
         pyautogui.keyDown('command')
         pyautogui.press('space')
         time.sleep(0.1)
         pyautogui.keyUp('command')
         for l in "steam":
-            time.sleep(0.02)
+            time.sleep(0.01)
             pyautogui.press(l)
-        time.sleep(0.2)
+        time.sleep(0.05)
         pyautogui.press('enter')
-        time.sleep(1)
+        time.sleep(0.5)
         # Wait for the green button then start ic
         self.wait_steam_ic_not_running()
         time.sleep(self.short_click_wait)
@@ -349,7 +352,13 @@ class Idler:
         # Wait for the "welcome back button", this can take a while, as needs to do
         # the offline progress before this appears.
         self.wait_welcome_back_button_present()
+        print('b', end='')
         time.sleep(self.short_click_wait)
         self.click_welcome_back_button()
+        time.sleep(0.5)
+        self.click_welcome_back_button()
+        time.sleep(0.5)
+        self.click_welcome_back_button()
+        print('c', end='')
         
 
