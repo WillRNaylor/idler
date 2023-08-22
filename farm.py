@@ -43,12 +43,7 @@ Run plan:
 print("==== Starting running")
 
 # Init the idler class:
-ic = Idler()
-
-mouse_pos = pyautogui.position()
-print(f"Initial mouse position: (x={mouse_pos[0]}, y={mouse_pos[1]})", )
-
-# exit()
+ic = Idler('fullscreen_hermes')
 
 print("==== Switching to Idle Champions")
 ic.alt_tab()
@@ -58,12 +53,15 @@ print("==== Starting main loop:")
 reset_counter = 0
 while True:
     # Run program:
-    ic.wait_and_stop_at_base_lvl(480)
+    t = time.time()
+    ic.wait_and_stop_at_base_lvl(460)
     ic.click_level(1)
     ic.select_group('e')
-    ic.wait_for_enrage()
-    ic.wait(2.)
+    time.sleep(0.2)
+    ic.restart_ic()
+    time.sleep(0.1)
     ic.swap_to_group_and_start_progress('q')
     ic.wait_for_reset()
     reset_counter += 1
+    print(f"Counter: {str(reset_counter).zfill(4)}  | Run time: {time.time() - t}")
 

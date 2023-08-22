@@ -53,7 +53,6 @@ class Config:
             self.SAFETY_LVL = self.STOP_LVL - (self.STOP_LVL % 100) - 50
         
         self.logger = util.init_logger('logfile_', name='idler')
-        self.timer = util.init_logger('time_brakdown_', name='timer')
 
 config = Config()
 pos = Locations('fullscreen_hermes')
