@@ -4,6 +4,7 @@ import logging
 import datetime
 import cv2
 import numpy as np
+from termcolor import colored
 import mss
 import pyautogui
 import pytesseract
@@ -11,21 +12,29 @@ import pytesseract
 from locations import Locations
 
 class Idler:
-    def __init__(self, setup):
+    def __init__(self, setup, verbose=True):
         # ==== Basic
         # ===== Advanced
         self.short_click_wait = 0.1
         self.long_click_wait = 0.4
         self.progress_wait = 0.02
         self.image_ref_path = 'img_reference'
-        self.lvl_match_tollerance = 5
+        self.lvl_match_tollerance = 3
         self.alt_tab_wait = 0.1
         self.alt_tab_end_wait = 0.3
+        self.verbose = verbose
         # ==== Internal
+        self.setup = setup
         self.pos = Locations(setup)
         self.lvl_ref = None
         self.last_pt = None
         self.init_logger('logfile_', name='idler', level=logging.INFO)
+        self.pc_cmd = 'light_cyan'
+        self.pc_imp = 'light_yellow'
+        self.startup_time = time.time()
+        self.run_start_time = None
+        self.run_count = 0
+        self.prev_run_times = []
     
     def init_logger(self, logfile, name='idler', level=logging.INFO):
         '''
@@ -48,6 +57,35 @@ class Idler:
         logger.addHandler(fh)
         self.logger = logger
 
+    def zero_run_clock(self):
+        self.run_start_time = time.time()
+        if self.verbose:
+            print(f'Run clock reset.')
+    
+    def increment_run_count(self):
+        self.run_count += 1
+
+    def zero_session_clock(self):
+        self.run_start_time = time.time()
+    
+    def print_run_stats(self, num_bosses=None):
+        up_time = int(time.time() - self.startup_time)
+        run_time = int(time.time() - self.run_start_time)
+        at = colored('==== ', 'light_magenta')
+        print(at + 'Run count: ' + colored(str(self.run_count).zfill(4), self.pc_imp))
+        print(at + 'Run time:  ' + colored(str(datetime.timedelta(seconds=run_time)), self.pc_imp))
+        if self.verbose:
+            print(at + f"Total time: {str(datetime.timedelta(seconds=up_time))}")
+            if num_bosses is not None:
+                bph = num_bosses * 3600 / run_time
+                print(at + "BPH:    " + colored(str(int(bph)), self.pc_imp))
+                print(at + "Gems/h: " + colored(str(int(bph * 9.15)), 'light_green') + ' (' + colored(str(int(bph * 9.15 * 1.5)), 'light_green') + ' with gem hunter)')
+            if self.prev_run_times:
+                print(at + f"Previous runs: " + colored(run_time, self.pc_imp), end=', ')
+                for t in self.prev_run_times[:6]:
+                    print(t, end=', ')
+                print('')
+        self.prev_run_times.append(run_time)
     
     def alt_tab(self):
         '''
@@ -67,29 +105,40 @@ class Idler:
 
         Used for the search of getting the base lvl (i.e. the level mod 5 + 1).
         '''
+        # Different IC setups need a diff. prefix to the files or folders.
+        if self.setup == 'fullscreen_hermes':
+            prefix = ''
+        elif self.setup == 'windowed_hermes':
+            prefix = 'wind_'
+        else:
+            print(f"ValueError? self.setup = {self.setup}")
         # Load the transition image:
-        transition = cv2.imread(os.path.join(self.image_ref_path, 'transition.png'))
+        transition = cv2.imread(os.path.join(self.image_ref_path, prefix + 'transition.png'))
         # Load images:
         lvls = []
         imgs = []
+        lvls_done = []
+        imgs_done = []
         # First the undone levels:
-        files = os.listdir(os.path.join(self.image_ref_path, 'base_lvls'))
+        files = os.listdir(os.path.join(self.image_ref_path, prefix + 'base_lvls'))
         files.sort()
         for f in files:
             if f[-4:] != '.png':
                 continue
             lvls.append(int(f[:-4]))
-            imgs.append(cv2.imread(os.path.join(self.image_ref_path, 'base_lvls', f)))
+            imgs.append(cv2.imread(os.path.join(self.image_ref_path, prefix + 'base_lvls', f)))
         # Now the completed levels:
-        files = os.listdir(os.path.join(self.image_ref_path, 'base_lvls_done'))
+        files = os.listdir(os.path.join(self.image_ref_path, prefix + 'base_lvls_done'))
         files.sort()
         for f in files:
             if f[-4:] != '.png':
                 continue
-            lvls.append(int(f[:-4]))
-            imgs.append(cv2.imread(os.path.join(self.image_ref_path, 'base_lvls_done', f)))        
+            lvls_done.append(int(f[:-4]))
+            imgs_done.append(cv2.imread(os.path.join(self.image_ref_path, prefix + 'base_lvls_done', f)))
+        # Now riffle them together:
+        lvls = [val for pair in zip(lvls, lvls_done) for val in pair]
+        imgs = [val for pair in zip(imgs, imgs_done) for val in pair]
         self.lvl_ref = {'lvls': lvls, 'imgs': imgs, 'transition': transition}
-
 
     def get_base_level_number_img(self):
         '''
@@ -97,7 +146,11 @@ class Idler:
         '''
         with mss.mss() as sct:
             return np.array(sct.grab(self.pos.base_level_number))[:, :, :3]
-
+    
+    def save_base_level_number_img(self, filename):
+        with mss.mss() as sct:
+            im = np.array(sct.grab(self.pos.base_level_number))[:, :, :3]
+        cv2.imwrite(os.path.join('.', filename + '.png'), im)
 
     def get_base_level(self):
         '''
@@ -112,14 +165,14 @@ class Idler:
         # Grab the base lvl image
         img = self.get_base_level_number_img()
         # First, check if we are in a transition:
-        if np.allclose(img, self.lvl_ref['transition'], atol=self.lvl_match_tollerance):
+        if np.square(np.subtract(self.lvl_ref['transition'], img)).mean() < self.lvl_match_tollerance:
             return None
         # Find lvl number
         m = len(self.lvl_ref['lvls'])
         counter = 0
         while counter < m:
             pt = (self.last_pt + counter) % m
-            if np.allclose(img, self.lvl_ref['imgs'][pt], atol=self.lvl_match_tollerance):
+            if np.square(np.subtract(self.lvl_ref['imgs'][pt], img)).mean() < self.lvl_match_tollerance:
                 self.last_pt = pt
                 return (self.lvl_ref['lvls'][pt])
             counter += 1
@@ -131,7 +184,12 @@ class Idler:
         Gets the image from where the enrage stacks text comes up
         '''
         with mss.mss() as sct:
-            return np.array(sct.grab(self.pos.enrage_box))
+            return np.array(sct.grab(self.pos.enrage_box))[:, :, :3]
+
+    def save_enrage_img(self, filename):
+        with mss.mss() as sct:
+            im = np.array(sct.grab(self.pos.enrage_box))[:, :, :3]
+        cv2.imwrite(os.path.join('.', filename + '.png'), im)
 
     def get_steam_start_button(self):
         with mss.mss() as sct:
@@ -195,7 +253,7 @@ class Idler:
             safety_counter += 1
 
     def check_enrage_status(self):
-        im = self.get_enrage_img(self)
+        im = self.get_enrage_img()
         text = pytesseract.image_to_string(im)
         if isinstance(text, str):
             if 'pow' in text.lower():
@@ -209,6 +267,8 @@ class Idler:
 
     def wait(self, wait_time):
         t = time.time()
+        if self.verbose:
+            print(f'Waitig {wait_time} seconds')
         self.logger.info(f'Waitig {wait_time}.')
         time.sleep(wait_time)
 
@@ -218,6 +278,8 @@ class Idler:
 
     def select_group(self, group):
         pyautogui.press(group)
+        if self.verbose:
+            print("Selected group: " + colored(group.upper(), self.pc_cmd))
 
     def move_mouse_to_safe(self):
         pyautogui.moveTo(self.pos.safe[0], self.pos.safe[1])
@@ -227,18 +289,36 @@ class Idler:
 
     def click_back(self):
         pyautogui.click(x=self.pos.back[0], y=self.pos.back[1])
+        if self.verbose:
+            print("Clicked: " + colored('BACK', self.pc_cmd))
+        time.sleep(self.short_click_wait)
+
+    def click_back_one_lvl(self):
+        pyautogui.press('left')
+        if self.verbose:
+            print("Clicked back one lvl: " + colored('LEFT', self.pc_cmd))
 
     def click_level(self, lvl):
         if lvl == 1:
             pyautogui.click(x=self.pos.level1[0], y=self.pos.level1[1])
+            if self.verbose:
+                print("Clicked: " + colored('LVL-1', self.pc_cmd))
         elif lvl == 2:
             pyautogui.click(x=self.pos.level2[0], y=self.pos.level2[1])
+            if self.verbose:
+                print("Clicked: " + colored('LVL-2', self.pc_cmd))
         elif lvl == 3:
             pyautogui.click(x=self.pos.level3[0], y=self.pos.level3[1])
+            if self.verbose:
+                print("Clicked: " + colored('LVL-3', self.pc_cmd))
         elif lvl == 4:
             pyautogui.click(x=self.pos.level4[0], y=self.pos.level4[1])
+            if self.verbose:
+                print("Clicked: " + colored('LVL-4', self.pc_cmd))
         elif lvl == 5:
             pyautogui.click(x=self.pos.level5[0], y=self.pos.level5[1])
+            if self.verbose:
+                print("Clicked: " + colored('LVL-5', self.pc_cmd))
         else:
             raise ValueError
         time.sleep(self.short_click_wait)
@@ -249,60 +329,85 @@ class Idler:
     
     def press_start_stop(self):
         pyautogui.press('g')
+        if self.verbose:
+            print('Progress started/stopped: ' + colored('G', self.pc_cmd))
 
     def wait_and_stop_at_base_lvl(self, target_lvl, safety_lvl=50, safety_lvl_count=20):
         '''
         Wait until you find a base lvl >= target_lvl
         '''
-        t = time.time()
+        if self.verbose:
+            print('---- Waiting to stop at or over base lvl: ' + colored(target_lvl, self.pc_imp))
         self.logger.info(f'Starting waiting to lvl {target_lvl} in: wait_to_lvl()')
         safety_counter = 0
+        prev_lvl = 0
         while True:
             time.sleep(self.progress_wait)
             lvl = self.get_base_level()
-            lvl_string = str(lvl).zfill(4) if lvl is not None else '  - '
+            # lvl_string = str(lvl).zfill(4) if lvl is not None else '  - '
+            if (lvl is not None) and lvl != prev_lvl:
+                lvl_string = str(lvl)
+            elif (lvl is not None) and lvl == prev_lvl:
+                lvl_string = '-'
+            else:
+                lvl_string = '.'
+            prev_lvl = lvl
             if lvl is not None:
                 if lvl >= (target_lvl - safety_lvl):
                     safety_counter +=1
                 if (lvl >= target_lvl) and (safety_counter > safety_lvl_count):
-                    pyautogui.press('g')
+                    if self.verbose:
+                        print(f'\nFound base lvl {lvl_string} ( >= {target_lvl}).')
+                    self.press_start_stop()
                     self.logger.info(f'Exiting waiting() with lvl: {lvl_string}   sc: {safety_counter}')
                     return
+            colour = 'green' if safety_counter > 0 else 'dark_grey'
+            if self.verbose:
+                print(colored(lvl_string, colour), end='', flush=True)
             self.logger.info(f'lvl: {lvl_string}   sc: {safety_counter}')
 
     def wait_for_enrage(self, check_wait_time=0.2, max_waiting_loops=1000):
-        t = time.time()
+        if self.verbose:
+            print('---- Waiting for enemy rage')
         self.logger.info('Staring: wait_for_enrage()')
         update_counter = 0
         while update_counter < max_waiting_loops:
             time.sleep(check_wait_time)
             rage = self.check_enrage_status()
             if rage:
-                self.logger.info('Exiting wait_for_enrage() successfully')
+                if self.verbose:
+                    print('\nExiting rage successfully.')
+                self.logger.info('\nExiting wait_for_enrage() successfully')
                 return
             if update_counter % 10 == 0:
+                if self.verbose:
+                    print(colored(update_counter, 'dark_grey'), end=' ', flush=True)
                 self.logger.info(f'Waiting...  uc: {update_counter}')
             update_counter += 1
+        if self.verbose:
+            print(colored('\nExiting rage unsuccessfully (timeout)', 'light_red'))
         self.logger.info(f'Exiting wait_for_enrage() unsuccessfully  uc: {update_counter}')
 
     def swap_to_group_and_start_progress(self, group):
+        if self.verbose:
+            print('---- Swapping to group ' + colored(group.upper(), self.pc_cmd) + ' and starting progress')
         self.logger.info('swap_to_group_and_start_progress()')
-        # pyautogui.keyDown('shift')
-        self.click_back()
-        # pyautogui.keyUp('shift')
-        time.sleep(self.short_click_wait)
-        self.click_level(1)
+        self.click_back_one_lvl()
         time.sleep(self.short_click_wait)
         pyautogui.press(group)
         time.sleep(self.short_click_wait)
-        pyautogui.press('g')
+        self.press_start_stop()
         self.logger.info("Switched to KILL_GROUP, and 'g'ing")
+        # # Hack to check the "OK" button is pressed.
+        # time.sleep(2)
+        # self.click_welcome_back_button()
         
     def wait_for_reset(self, safety_lvl_upper=60, pause_at_reset=None):
         '''
         pause_at_reset should be None, or a pause time
         '''
-        t = time.time()
+        if self.verbose:
+            print('---- Waiting for reset lvl')
         self.logger.info('Starting: wait_for_reset()')
         safety_counter = 0
         while safety_counter < 100000:
@@ -355,9 +460,7 @@ class Idler:
         print('b', end='')
         time.sleep(self.short_click_wait)
         self.click_welcome_back_button()
-        time.sleep(0.5)
-        self.click_welcome_back_button()
-        time.sleep(0.5)
+        time.sleep(0.2)
         self.click_welcome_back_button()
         print('c', end='')
         

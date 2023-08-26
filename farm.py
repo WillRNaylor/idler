@@ -1,4 +1,5 @@
 import time
+from termcolor import colored
 import pyautogui
 
 import util
@@ -43,7 +44,7 @@ Run plan:
 print("==== Starting running")
 
 # Init the idler class:
-ic = Idler('fullscreen_hermes')
+ic = Idler('windowed_hermes')
 
 print("==== Switching to Idle Champions")
 ic.alt_tab()
@@ -52,19 +53,14 @@ ic.move_mouse_to_safe()
 print("==== Starting main loop:")
 reset_counter = 0
 while True:
-    # Run program:
-    t = time.time()
-    print('1', end='')
-    ic.wait_and_stop_at_base_lvl(460)
-    ic.click_level(1)
+    ic.zero_run_clock()
+    ic.wait_and_stop_at_base_lvl(651)
     ic.select_group('e')
-    time.sleep(0.2)
-    ic.restart_ic()
-    time.sleep(0.1)
-    print('s', end='')
-    ic.swap_to_group_and_start_progress('q')
-    print('2 ', end='')
+    ic.wait_for_enrage()
+    ic.wait(10)
+    ic.swap_to_group_and_start_progress('w')
     ic.wait_for_reset()
-    reset_counter += 1
-    print(f"Counter: {str(reset_counter).zfill(4)}  | Run time: {time.time() - t}")
+    ic.print_run_stats(num_bosses=131)
+    ic.increment_run_count()
+
 

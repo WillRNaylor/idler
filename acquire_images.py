@@ -35,8 +35,12 @@ pos = Locations('fullscreen_hermes')
 
 
 # ==== Get a single image:
-ic = Idler('fullscreen_hermes')
+ic = Idler('windowed_hermes')
 ic.alt_tab()
-with mss.mss() as sct:
-    img = np.array(sct.grab(pos.steam_start_button_box))
-cv2.imwrite(os.path.join('.', "new_img.png"), img)
+ic.move_mouse_to_safe()
+counter = 0
+while True:
+    ic.save_base_level_number_img(f'img_reference/temp/{counter}')
+    time.sleep(0.3)
+    counter += 1
+    print(counter, end=',', flush=True)
