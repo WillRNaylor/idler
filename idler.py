@@ -82,7 +82,7 @@ class Idler:
                 print(at + "Gems/h: " + colored(str(int(bph * 9.15)), 'light_green') + ' (' + colored(str(int(bph * 9.15 * 1.5)), 'light_green') + ' with gem hunter)')
             if self.prev_run_times:
                 print(at + f"Previous runs: " + colored(run_time, self.pc_imp), end=', ')
-                for t in self.prev_run_times[:6]:
+                for t in reversed(self.prev_run_times[:10]):
                     print(t, end=', ')
                 print('')
         self.prev_run_times.append(run_time)
@@ -394,15 +394,19 @@ class Idler:
         self.logger.info('swap_to_group_and_start_progress()')
         self.click_back_one_lvl()
         time.sleep(self.short_click_wait)
-        pyautogui.press(group)
+        self.select_group(group)
+        time.sleep(self.short_click_wait)
+        self.select_group(group)
         time.sleep(self.short_click_wait)
         self.press_start_stop()
+        time.sleep(self.short_click_wait)
+        self.select_group(group)
         self.logger.info("Switched to KILL_GROUP, and 'g'ing")
         # # Hack to check the "OK" button is pressed.
         # time.sleep(2)
         # self.click_welcome_back_button()
         
-    def wait_for_reset(self, safety_lvl_upper=60, pause_at_reset=None):
+    def wait_for_reset(self, safety_lvl_upper=60, pause_at_reset=None, wait_iterations=100000):
         '''
         pause_at_reset should be None, or a pause time
         '''
@@ -410,25 +414,29 @@ class Idler:
             print('---- Waiting for reset lvl')
         self.logger.info('Starting: wait_for_reset()')
         safety_counter = 0
-        while safety_counter < 100000:
+        while safety_counter < wait_iterations:
             time.sleep(self.progress_wait)
             self.last_pt = 0  # We care about finding lvl 1, so start from 0
             lvl = self.get_base_level()
             if lvl is not None:
                 if (lvl >= 1) and (lvl <= safety_lvl_upper):
                     if pause_at_reset is not None:
+                        print("Pausing at reset")
                         pyautogui.press('g')
                         time.sleep(pause_at_reset)
                         pyautogui.press('g')
                     break
                 safety_counter += 1
-        self.logger.info("Click away the server error messages")
-        self.click_server_error_msg()
-        time.sleep(self.long_click_wait)
-        self.click_server_error_msg()
-        time.sleep(self.short_click_wait)
-        self.move_mouse_to_safe()
-        t = time.time()
+        # Added another safety layer:
+        if safety_counter >= (wait_iterations - 1):
+            print(colored("Passed the 'wait for reset' safety counter", 'light_red'))
+            self.swap_to_group_and_start_progress('w')
+        # self.logger.info("Click away the server error messages")
+        # self.click_server_error_msg()
+        # time.sleep(self.long_click_wait)
+        # self.click_server_error_msg()
+        # time.sleep(self.short_click_wait)
+        # self.move_mouse_to_safe()
     
     def restart_ic(self):
         # Quit ic

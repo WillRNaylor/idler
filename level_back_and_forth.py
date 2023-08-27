@@ -1,7 +1,7 @@
 import time
 import pyautogui
 
-WAIT = 7.5
+WAIT = 12
 
 while True:
     time.sleep(WAIT)
