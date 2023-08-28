@@ -68,24 +68,47 @@ class Idler:
     def zero_session_clock(self):
         self.run_start_time = time.time()
     
+    def print_major(self, text=''):
+        start = colored('==', 'light_magenta')
+        time_string = colored(datetime.datetime.now().strftime("%H:%M:%S "), 'light_magenta')
+        print(start + time_string + text)
+
+    def print_minor(self, text=''):
+        start = colored('--', 'light_magenta')
+        time_string = colored(datetime.datetime.now().strftime("%H:%M:%S "), 'magenta')
+        print(start + time_string + text)
+
+    def print_major_seperator(self):
+        start = colored('==', 'light_magenta')
+        time_string = colored(datetime.datetime.now().strftime("%H:%M:%S"), 'light_magenta')
+        ending = colored('================================================================', 'light_magenta')
+        print(start + time_string + ending)
+
+    def print_minor_seperator(self):
+        start = colored('--', 'light_magenta')
+        time_string = colored(datetime.datetime.now().strftime("%H:%M:%S"), 'light_magenta')
+        ending = colored('----------------------------------------------------------------', 'light_magenta')
+        print(start + time_string + ending)
+    
     def print_run_stats(self, num_bosses=None):
         up_time = int(time.time() - self.startup_time)
         run_time = int(time.time() - self.run_start_time)
-        at = colored('==== ', 'light_magenta')
-        print(at + 'Run count: ' + colored(str(self.run_count).zfill(4), self.pc_imp))
-        print(at + 'Run time:  ' + colored(str(datetime.timedelta(seconds=run_time)), self.pc_imp))
+        self.print_minor_seperator()
+        self.print_major('Run count: ' + colored(str(self.run_count).zfill(4), self.pc_imp))
+        self.print_major('Run time:  ' + colored(str(datetime.timedelta(seconds=run_time)), self.pc_imp))
         if self.verbose:
-            print(at + f"Total time: {str(datetime.timedelta(seconds=up_time))}")
+            self.print_major(f"Total time: {str(datetime.timedelta(seconds=up_time))}")
             if num_bosses is not None:
                 bph = num_bosses * 3600 / run_time
-                print(at + "BPH:    " + colored(str(int(bph)), self.pc_imp))
-                print(at + "Gems/h: " + colored(str(int(bph * 9.15)), 'light_green') + ' (' + colored(str(int(bph * 9.15 * 1.5)), 'light_green') + ' with gem hunter)')
+                self.print_major("BPH:    " + colored(str(int(bph)), self.pc_imp))
+                self.print_major("Gems/h: " + colored(str(int(bph * 9.15)), 'light_green') + ' (' + colored(str(int(bph * 9.15 * 1.5)), 'light_green') + ' with gem hunter)')
             if self.prev_run_times:
-                print(at + f"Previous runs: " + colored(run_time, self.pc_imp), end=', ')
+                runs = colored(run_time, self.pc_imp) + ', '
                 for t in reversed(self.prev_run_times[:10]):
-                    print(t, end=', ')
-                print('')
+                    runs += str(t) + ', '
+                self.print_major(f"Previous runs: " + runs)
         self.prev_run_times.append(run_time)
+        self.print_major_seperator()
     
     def alt_tab(self):
         '''
@@ -337,22 +360,25 @@ class Idler:
         Wait until you find a base lvl >= target_lvl
         '''
         if self.verbose:
-            print('---- Waiting to stop at or over base lvl: ' + colored(target_lvl, self.pc_imp))
+            self.print_minor('Waiting to stop at or over base lvl: ' + colored(target_lvl, self.pc_imp))
         self.logger.info(f'Starting waiting to lvl {target_lvl} in: wait_to_lvl()')
         safety_counter = 0
+        same_lvl_counter = 0
         prev_lvl = 0
         while True:
             time.sleep(self.progress_wait)
             lvl = self.get_base_level()
-            # lvl_string = str(lvl).zfill(4) if lvl is not None else '  - '
             if (lvl is not None) and lvl != prev_lvl:
+                same_lvl_counter = 0
                 lvl_string = str(lvl)
             elif (lvl is not None) and lvl == prev_lvl:
                 lvl_string = '-'
             else:
+                same_lvl_counter = 0
                 lvl_string = '.'
             prev_lvl = lvl
             if lvl is not None:
+                same_lvl_counter += 1
                 if lvl >= (target_lvl - safety_lvl):
                     safety_counter +=1
                 if (lvl >= target_lvl) and (safety_counter > safety_lvl_count):
@@ -361,14 +387,20 @@ class Idler:
                     self.press_start_stop()
                     self.logger.info(f'Exiting waiting() with lvl: {lvl_string}   sc: {safety_counter}')
                     return
-            colour = 'green' if safety_counter > 0 else 'dark_grey'
+            colour = 'dark_grey'
+            if safety_counter > 0:
+                colour = 'green'
+            elif same_lvl_counter > 200:
+                colour = 'red'
+            elif same_lvl_counter > 50:
+                colour = 'light_grey'
             if self.verbose:
                 print(colored(lvl_string, colour), end='', flush=True)
             self.logger.info(f'lvl: {lvl_string}   sc: {safety_counter}')
 
     def wait_for_enrage(self, check_wait_time=0.2, max_waiting_loops=1000):
         if self.verbose:
-            print('---- Waiting for enemy rage')
+            self.print_minor('Waiting for enemy rage' + colored(f' check_wait_time={check_wait_time}, max_waiting_loops={max_waiting_loops}', 'dark_grey'))
         self.logger.info('Staring: wait_for_enrage()')
         update_counter = 0
         while update_counter < max_waiting_loops:
@@ -376,12 +408,12 @@ class Idler:
             rage = self.check_enrage_status()
             if rage:
                 if self.verbose:
-                    print('\nExiting rage successfully.')
+                    print('\nExiting rage successfully')
                 self.logger.info('\nExiting wait_for_enrage() successfully')
                 return
             if update_counter % 10 == 0:
                 if self.verbose:
-                    print(colored(update_counter, 'dark_grey'), end=' ', flush=True)
+                    print(colored(update_counter, 'dark_grey'), end=colored(',', 'dark_grey'), flush=True)
                 self.logger.info(f'Waiting...  uc: {update_counter}')
             update_counter += 1
         if self.verbose:
@@ -390,7 +422,7 @@ class Idler:
 
     def swap_to_group_and_start_progress(self, group):
         if self.verbose:
-            print('---- Swapping to group ' + colored(group.upper(), self.pc_cmd) + ' and starting progress')
+            self.print_minor('Swapping to group ' + colored(group.upper(), self.pc_cmd) + ' and starting progress')
         self.logger.info('swap_to_group_and_start_progress()')
         self.click_back_one_lvl()
         time.sleep(self.short_click_wait)
@@ -411,15 +443,24 @@ class Idler:
         pause_at_reset should be None, or a pause time
         '''
         if self.verbose:
-            print('---- Waiting for reset lvl')
+            self.print_minor('Waiting for reset lvl')
         self.logger.info('Starting: wait_for_reset()')
         safety_counter = 0
+        prev_lvl = 0
         while safety_counter < wait_iterations:
             time.sleep(self.progress_wait)
             self.last_pt = 0  # We care about finding lvl 1, so start from 0
             lvl = self.get_base_level()
+            if (lvl is not None) and lvl != prev_lvl:
+                lvl_string = str(lvl)
+            elif (lvl is not None) and lvl == prev_lvl:
+                lvl_string = '-'
+            else:
+                lvl_string = '.'
+            prev_lvl = lvl
             if lvl is not None:
                 if (lvl >= 1) and (lvl <= safety_lvl_upper):
+                    print("\nGo go go")
                     if pause_at_reset is not None:
                         print("Pausing at reset")
                         pyautogui.press('g')
@@ -427,6 +468,13 @@ class Idler:
                         pyautogui.press('g')
                     break
                 safety_counter += 1
+            colour = 'dark_grey'
+            if safety_counter > int(wait_iterations * 0.5):
+                colour = 'red'
+            elif safety_counter > int(wait_iterations * 0.05):
+                colour = 'light_grey'
+            if self.verbose:
+                print(colored(lvl_string, colour), end='', flush=True)
         # Added another safety layer:
         if safety_counter >= (wait_iterations - 1):
             print(colored("Passed the 'wait for reset' safety counter", 'light_red'))

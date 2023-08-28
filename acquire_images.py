@@ -10,6 +10,11 @@ import util
 from idler import Idler
 from locations import Locations
 
+'''
+File to take screenshots of the game running to form the 'reference'.
+This should be used to as a setup step, not in actual farming.
+'''
+
 pos = Locations('fullscreen_hermes')
 
 # util.alt_tab()
