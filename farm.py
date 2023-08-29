@@ -2,7 +2,6 @@ import time
 from termcolor import colored
 import pyautogui
 
-import util
 from idler import Idler
 
 '''

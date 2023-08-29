@@ -28,46 +28,37 @@ class Idler:
         self.pos = Locations(setup)
         self.lvl_ref = None
         self.last_pt = None
-        self.init_logger('logfile_', name='idler', level=logging.INFO)
         self.pc_cmd = 'light_cyan'
         self.pc_imp = 'light_yellow'
         self.startup_time = time.time()
         self.run_start_time = None
         self.run_count = 0
         self.prev_run_times = []
-    
-    def init_logger(self, logfile, name='idler', level=logging.INFO):
-        '''
-        Define the logger object for logging.
-        Parameters
-        ----------
-        logfile : str
-            Full path of the output log file.
-        name : str
-            Name of the logger, used by the logging library.
-        Returns
-        -------
-            logger."logging-object"
-        '''
-        logger = logging.getLogger(name)
-        logger.setLevel(level)
-        fh = logging.FileHandler(os.path.join(
-            './logs', logfile + datetime.datetime.now().strftime('%Y%m%d')), 'a+')
-        fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-        logger.addHandler(fh)
-        self.logger = logger
+        # self.init_logger('logfile_', name='idler', level=logging.INFO)
 
-    def zero_run_clock(self):
-        self.run_start_time = time.time()
-        if self.verbose:
-            print(f'Run clock reset.')
-    
-    def increment_run_count(self):
-        self.run_count += 1
+    # def init_logger(self, logfile, name='idler', level=logging.INFO):
+    #     '''
+    #     Define the logger object for logging.
+    #     Parameters
+    #     ----------
+    #     logfile : str
+    #         Full path of the output log file.
+    #     name : str
+    #         Name of the logger, used by the logging library.
+    #     Returns
+    #     -------
+    #         logger."logging-object"
+    #     '''
+    #     logger = logging.getLogger(name)
+    #     logger.setLevel(level)
+    #     fh = logging.FileHandler(os.path.join(
+    #         './logs', logfile + datetime.datetime.now().strftime('%Y%m%d')), 'a+')
+    #     fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    #     logger.addHandler(fh)
+    #     self.logger = logger
+    # # #     Usage example:
+    # #     self.logger.info(text)
 
-    def zero_session_clock(self):
-        self.run_start_time = time.time()
-    
     def print_major(self, text=''):
         start = colored('==', 'light_magenta')
         time_string = colored(datetime.datetime.now().strftime("%H:%M:%S "), 'light_magenta')
@@ -89,7 +80,18 @@ class Idler:
         time_string = colored(datetime.datetime.now().strftime("%H:%M:%S"), 'light_magenta')
         ending = colored('----------------------------------------------------------------', 'light_magenta')
         print(start + time_string + ending)
+
+    def zero_run_clock(self):
+        self.run_start_time = time.time()
+        if self.verbose:
+            print(f'Run clock reset.')
     
+    def increment_run_count(self):
+        self.run_count += 1
+
+    def zero_session_clock(self):
+        self.run_start_time = time.time()
+
     def print_run_stats(self, num_bosses=None):
         up_time = int(time.time() - self.startup_time)
         run_time = int(time.time() - self.run_start_time)
@@ -104,7 +106,7 @@ class Idler:
                 self.print_major("Gems/h: " + colored(str(int(bph * 9.15)), 'light_green') + ' (' + colored(str(int(bph * 9.15 * 1.5)), 'light_green') + ' with gem hunter)')
             if self.prev_run_times:
                 runs = colored(run_time, self.pc_imp) + ', '
-                for t in reversed(self.prev_run_times[:10]):
+                for t in reversed(self.prev_run_times):
                     runs += str(t) + ', '
                 self.print_major(f"Previous runs: " + runs)
         self.prev_run_times.append(run_time)
@@ -292,7 +294,6 @@ class Idler:
         t = time.time()
         if self.verbose:
             print(f'Waitig {wait_time} seconds')
-        self.logger.info(f'Waitig {wait_time}.')
         time.sleep(wait_time)
 
     def click_welcome_back_button(self):
@@ -361,7 +362,6 @@ class Idler:
         '''
         if self.verbose:
             self.print_minor('Waiting to stop at or over base lvl: ' + colored(target_lvl, self.pc_imp))
-        self.logger.info(f'Starting waiting to lvl {target_lvl} in: wait_to_lvl()')
         safety_counter = 0
         same_lvl_counter = 0
         prev_lvl = 0
@@ -385,7 +385,6 @@ class Idler:
                     if self.verbose:
                         print(f'\nFound base lvl {lvl_string} ( >= {target_lvl}).')
                     self.press_start_stop()
-                    self.logger.info(f'Exiting waiting() with lvl: {lvl_string}   sc: {safety_counter}')
                     return
             colour = 'dark_grey'
             if safety_counter > 0:
@@ -396,12 +395,10 @@ class Idler:
                 colour = 'light_grey'
             if self.verbose:
                 print(colored(lvl_string, colour), end='', flush=True)
-            self.logger.info(f'lvl: {lvl_string}   sc: {safety_counter}')
 
     def wait_for_enrage(self, check_wait_time=0.2, max_waiting_loops=1000):
         if self.verbose:
             self.print_minor('Waiting for enemy rage' + colored(f' check_wait_time={check_wait_time}, max_waiting_loops={max_waiting_loops}', 'dark_grey'))
-        self.logger.info('Staring: wait_for_enrage()')
         update_counter = 0
         while update_counter < max_waiting_loops:
             time.sleep(check_wait_time)
@@ -409,21 +406,17 @@ class Idler:
             if rage:
                 if self.verbose:
                     print('\nExiting rage successfully')
-                self.logger.info('\nExiting wait_for_enrage() successfully')
                 return
             if update_counter % 10 == 0:
                 if self.verbose:
                     print(colored(update_counter, 'dark_grey'), end=colored(',', 'dark_grey'), flush=True)
-                self.logger.info(f'Waiting...  uc: {update_counter}')
             update_counter += 1
         if self.verbose:
             print(colored('\nExiting rage unsuccessfully (timeout)', 'light_red'))
-        self.logger.info(f'Exiting wait_for_enrage() unsuccessfully  uc: {update_counter}')
 
     def swap_to_group_and_start_progress(self, group):
         if self.verbose:
             self.print_minor('Swapping to group ' + colored(group.upper(), self.pc_cmd) + ' and starting progress')
-        self.logger.info('swap_to_group_and_start_progress()')
         self.click_back_one_lvl()
         time.sleep(self.short_click_wait)
         self.select_group(group)
@@ -433,7 +426,6 @@ class Idler:
         self.press_start_stop()
         time.sleep(self.short_click_wait)
         self.select_group(group)
-        self.logger.info("Switched to KILL_GROUP, and 'g'ing")
         # # Hack to check the "OK" button is pressed.
         # time.sleep(2)
         # self.click_welcome_back_button()
@@ -444,7 +436,6 @@ class Idler:
         '''
         if self.verbose:
             self.print_minor('Waiting for reset lvl')
-        self.logger.info('Starting: wait_for_reset()')
         safety_counter = 0
         prev_lvl = 0
         while safety_counter < wait_iterations:
@@ -479,7 +470,6 @@ class Idler:
         if safety_counter >= (wait_iterations - 1):
             print(colored("Passed the 'wait for reset' safety counter", 'light_red'))
             self.swap_to_group_and_start_progress('w')
-        # self.logger.info("Click away the server error messages")
         # self.click_server_error_msg()
         # time.sleep(self.long_click_wait)
         # self.click_server_error_msg()
