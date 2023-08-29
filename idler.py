@@ -95,9 +95,10 @@ class Idler:
     def print_run_stats(self, num_bosses=None):
         up_time = int(time.time() - self.startup_time)
         run_time = int(time.time() - self.run_start_time)
+        run_time_min, run_time_seconds = divmod(run_time, 60)
         self.print_minor_seperator()
         self.print_major('Run count: ' + colored(str(self.run_count).zfill(4), self.pc_imp))
-        self.print_major('Run time:  ' + colored(str(datetime.timedelta(seconds=run_time)), self.pc_imp))
+        self.print_major('Run time:  ' + colored(f'{run_time_min}:{run_time_seconds}', self.pc_imp))
         if self.verbose:
             self.print_major(f"Total time: {str(datetime.timedelta(seconds=up_time))}")
             if num_bosses is not None:
@@ -111,7 +112,10 @@ class Idler:
                 self.print_major(f"Previous runs: " + runs)
         self.prev_run_times.append(run_time)
         self.print_major_seperator()
-    
+        # Now write a single summary ling to a 'logfile':
+        with open('./logs/logfile_' + datetime.datetime.now().strftime('%y%m%d'), 'a') as f:
+            f.write(f"{datetime.datetime.now().strftime('%H:%M:%S')} Run No. {str(self.run_count).zfill(3)} Run time: {run_time_min}:{run_time_seconds}")
+
     def alt_tab(self):
         '''
         Alt tabs between window and previous.
