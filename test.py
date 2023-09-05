@@ -17,23 +17,18 @@ Various random testing.
 
 ic = Idler('windowed_hermes')
 
-mouse_pos = pyautogui.position()
-print(f"Initial mouse position: ({mouse_pos[0]}, {mouse_pos[1]})", )
-
 # ic.alt_tab()
 # ic.click_level(1)
 
-ic.print_minor_seperator()
-ic.print_major('hello')
-ic.print_minor('end of msg')
-ic.print_major_seperator()
+mouse_pos = pyautogui.position()
+print(f"Initial mouse position: ({mouse_pos[0]}, {mouse_pos[1]})", )
 
 # print(colored('red ', 'red') + colored('green ', 'green') + colored('yellow ', 'yellow') + colored('blue ', 'blue') + colored('magenta ', 'magenta'))
 # print(colored('light_grey ', 'light_grey') + colored('dark_grey ', 'dark_grey') + colored('light_red ', 'light_red') + colored('light_yellow ', 'light_yellow') + colored('light_green ', 'light_green'))
 # print(colored('light_blue ', 'light_blue') + colored('light_magenta ', 'light_magenta') + colored('light_cyan ', 'light_cyan') + colored('cyan ', 'cyan'))
 
 # ic.alt_tab()
-# ic.wait_and_stop_at_base_lvl(400)
+# ic.wait_for_base_lvl(400)
 
 # ic.alt_tab()
 # counter = 0

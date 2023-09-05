@@ -6,7 +6,6 @@ import pyautogui
 import pytesseract
 import mss
 
-import util
 from idler import Idler
 from locations import Locations
 

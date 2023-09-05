@@ -397,7 +397,7 @@ class Idler:
         if self.verbose:
             print('Progress started/stopped: ' + colored('G', self.pc_cmd))
 
-    def wait_and_stop_at_base_lvl(self, target_lvl, safety_lvl=50, safety_lvl_count=20):
+    def wait_for_base_lvl(self, target_lvl, stop_at_lvl=False, safety_lvl=50, safety_lvl_count=20):
         '''
         Wait until you find a base lvl >= target_lvl
         '''
@@ -425,7 +425,8 @@ class Idler:
                 if (lvl >= target_lvl) and (safety_counter > safety_lvl_count):
                     if self.verbose:
                         print(f'\nFound base lvl {lvl_string} ( >= {target_lvl}).')
-                    self.press_start_stop()
+                    if stop_at_lvl:
+                        self.press_start_stop()
                     return
             colour = 'dark_grey'
             if safety_counter > 0:
