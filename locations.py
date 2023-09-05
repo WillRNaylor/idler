@@ -38,12 +38,8 @@ class Locations:
             self.level5 = (1398, 176)
             # self.load_ok = (759, 661)
             self.steam_start_button = (393, 471)
-            # self.welcome_back_button = (753, 609)
-            # self.welcome_back_button_2 = (753, 662)
             self.base_level_number = {"top": 161, "left": 1183, "width": 36, "height": 25}
             self.enrage_box = {"top": 528, "left": 711, "width": 334, "height": 42}
-            # self.steam_start_button_box = {"top": 442, "left": 289, "width": 231, "height": 55}
-            # self.welcome_back = {"top": 362, "left": 520, "width": 474, "height": 296}
         
         # self.res_factor = 2
         # self.base_level_number = tuple(i * self.res_factor for i in self.base_level_number)
