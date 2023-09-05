@@ -56,7 +56,7 @@ Known bugs / improvement ideas:
 # --------------------------------------------------------------------------
 
 # Init the idler class:
-ic = Idler('windowed_hermes')
+ic = Idler('windowed_hermes', reset_lvl=995, note='Waterdeep detours')
 
 ic.print_major_seperator()
 ic.print_major_seperator()
@@ -67,12 +67,12 @@ ic.alt_tab()
 ic.move_mouse_to_safe()
 
 # Waterdeep detours.
-# Stop at: 936, Reset at: 945
+# Stop at: 986, Reset at: 995
 # Need a click dmg pot.
 ic.print_major("Starting main loop")
 while True:
     ic.zero_run_clock()
-    ic.wait_and_stop_at_base_lvl(936)
+    ic.wait_and_stop_at_base_lvl(986)
     # Switch to briv and find a nice lvl to stack on:
     ic.select_group('e')
     ic.click_back()
@@ -84,11 +84,11 @@ while True:
     ic.click_level(3)
     # Get stacks then run to finish:
     ic.wait_for_enrage()
-    ic.wait(16)
+    ic.wait(5)
     ic.swap_to_group_and_start_progress('w')
     ic.wait_for_reset()
     # Tidy up:
-    ic.print_run_stats(num_bosses=189)
+    ic.print_run_stats()
     ic.increment_run_count()
 
 # 652 Normal GF helping:

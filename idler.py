@@ -12,8 +12,11 @@ import pytesseract
 from locations import Locations
 
 class Idler:
-    def __init__(self, setup, verbose=True):
+    def __init__(self, setup, reset_lvl=None, gem_pot=True, verbose=True, note=None):
         # ==== Basic
+        self.reset_lvl = reset_lvl
+        self.gem_pot=gem_pot
+        self.note=note
         # ===== Advanced
         self.short_click_wait = 0.1
         self.long_click_wait = 0.4
@@ -85,36 +88,70 @@ class Idler:
         self.run_start_time = time.time()
         if self.verbose:
             print(f'Run clock reset.')
-    
+
+    def increment_run_count(self):
+        self.run_count += 1
+
     def increment_run_count(self):
         self.run_count += 1
 
     def zero_session_clock(self):
         self.run_start_time = time.time()
 
-    def print_run_stats(self, num_bosses=None):
+    def print_run_stats(self, extra_bosses=0):
+        # ---- Calculate all the stats:
+        num_bosses = int(self.reset_lvl / 5) + int(extra_bosses)
         up_time = int(time.time() - self.startup_time)
         run_time = int(time.time() - self.run_start_time)
-        run_time_min, run_time_seconds = divmod(run_time, 60)
+        self.prev_run_times.append(run_time)
+        min, sec = divmod(run_time, 60)
+        run_time_st = f"{str(min).zfill(2)}:{str(sec).zfill(2)}"
+        run_count_st = str(self.run_count).zfill(3)
+        datetime_st = datetime.datetime.now().strftime('%H:%M:%S')
+        bph_st = str(int(num_bosses * 3600 / run_time))
+        if self.gem_pot:
+            gem_factor = 1.5
+        else:
+            gem_factor = 1.
+        gph_st = str(int(num_bosses * 3600 / run_time * 9.15 * gem_factor))
+        if self.run_count <= 1:
+            avg_time = run_time
+        else:
+            avg_time = np.sum(np.array(self.prev_run_times[1:])) / (self.run_count)
+        print(np.array(self.prev_run_times))
+        print(np.array(self.prev_run_times[1:]))
+        print(self.run_count)
+        print(np.sum(np.array(self.prev_run_times[1:])))
+        print(run_time)
+        print(avg_time)
+        min, sec = divmod(int(avg_time), 60)
+        avg_time_st = f"{str(min).zfill(2)}:{str(sec).zfill(2)}"
+        avg_bph_st = str(int(num_bosses * 3600 / avg_time))
+        avg_gph_st = str(int(num_bosses * 3600 / avg_time * 9.15 * gem_factor))
+
+        # ---- Printing those stats:
         self.print_minor_seperator()
-        self.print_major('Run count: ' + colored(str(self.run_count).zfill(4), self.pc_imp))
-        self.print_major('Run time:  ' + colored(f'{run_time_min}:{run_time_seconds}', self.pc_imp))
+        self.print_major('Run count: ' + colored(run_count_st, self.pc_imp))
+        self.print_major('Run time:  ' + colored(run_time_st, self.pc_imp))
         if self.verbose:
             self.print_major(f"Total time: {str(datetime.timedelta(seconds=up_time))}")
             if num_bosses is not None:
-                bph = num_bosses * 3600 / run_time
-                self.print_major("BPH:    " + colored(str(int(bph)), self.pc_imp))
-                self.print_major("Gems/h: " + colored(str(int(bph * 9.15)), 'light_green') + ' (' + colored(str(int(bph * 9.15 * 1.5)), 'light_green') + ' with gem hunter)')
-            if self.prev_run_times:
+                self.print_major("BPH:     " + colored(bph_st, self.pc_imp))
+                self.print_major("GPH:     " + colored(gph_st, 'light_green'))
+                self.print_major("avg BPH: " + colored(avg_bph_st, self.pc_imp))
+                self.print_major("avg GPH: " + colored(avg_gph_st, 'light_green'))
+            if len(self.prev_run_times) > 1:
                 runs = colored(run_time, self.pc_imp) + ', '
-                for t in reversed(self.prev_run_times):
+                for t in reversed(self.prev_run_times[1:]):
                     runs += str(t) + ', '
                 self.print_major(f"Previous runs: " + runs)
-        self.prev_run_times.append(run_time)
         self.print_major_seperator()
         # Now write a single summary ling to a 'logfile':
         with open('./logs/logfile_' + datetime.datetime.now().strftime('%y%m%d'), 'a') as f:
-            f.write(f"{datetime.datetime.now().strftime('%H:%M:%S')} Run No. {str(self.run_count).zfill(3)} Run time: {run_time_min}:{run_time_seconds}")
+            if len(self.prev_run_times) == 1:
+                f.write(f'         | r # | r time | r BPH | r GPH | a time | a BPH | a GPH | {self.note}\n')
+            else:
+                f.write(f"{datetime_st} | {run_count_st} | {run_time_st.rjust(6)} | {bph_st.rjust(5)} | {gph_st.rjust(5)} | {avg_time_st.rjust(6)} | {avg_bph_st.rjust(5)} | {avg_gph_st.rjust(5)} |\n")
 
     def alt_tab(self):
         '''
@@ -374,7 +411,7 @@ class Idler:
             lvl = self.get_base_level()
             if (lvl is not None) and lvl != prev_lvl:
                 same_lvl_counter = 0
-                lvl_string = str(lvl)
+                lvl_string = '\n' + str(lvl)
             elif (lvl is not None) and lvl == prev_lvl:
                 lvl_string = '-'
             else:
@@ -447,7 +484,7 @@ class Idler:
             self.last_pt = 0  # We care about finding lvl 1, so start from 0
             lvl = self.get_base_level()
             if (lvl is not None) and lvl != prev_lvl:
-                lvl_string = str(lvl)
+                lvl_string = '\n' + str(lvl)
             elif (lvl is not None) and lvl == prev_lvl:
                 lvl_string = '-'
             else:
