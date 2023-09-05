@@ -2,20 +2,16 @@
 
 Code to automatically play Idle Champions
 
-## --------------------------------------------------------------------------
 ## Disclaimer
-## --------------------------------------------------------------------------
 
 This is just a fun little project, which probably won't help anyone. If you want to use this code note:
  * It will be buggy
  * Much of the code is a hack to try and get some stability without fully diagnosing the game state
  * You will need to be able to code to get it to work
- * To get started you need to set up your own image reference, possibly useing acquire_images.py. This can take half a day.
+ * To get started you need your own image reference, using acquire_images.py.
  * I wasn't careful with writing decent code.
 
-## --------------------------------------------------------------------------
 ## Getting started
-## --------------------------------------------------------------------------
 
 Very roughly:
  * Install the environment (using the environment.yml file if you use conda), I believe you also have to pip install pytesseract.
@@ -24,9 +20,7 @@ Very roughly:
  * Try running some tests. You will surely want to build your own loop, similar to the loops I have in `farm.py`.
  * Debug and have fun.
 
-## --------------------------------------------------------------------------
 ## Automated Briv gem farming
-## --------------------------------------------------------------------------
 
 The general idea will be the following:
 
